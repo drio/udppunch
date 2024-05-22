@@ -20,10 +20,10 @@ var (
 	version = flag.Bool("version", false, "show version")
 )
 
-func punchServer(ctx context.Context, peers *lru.Cache, addr *net.UDPAddr) (net.Addr, error) {
+func punchServer(ctx context.Context, peers *lru.Cache, addr *net.UDPAddr) error {
 	conn, err := net.ListenUDP("udp", addr)
 	if err != nil {
-		return nil, err
+		return nil
 	}
 
 	go func() {
@@ -36,7 +36,8 @@ func punchServer(ctx context.Context, peers *lru.Cache, addr *net.UDPAddr) (net.
 			buf := make([]byte, 1024*8)
 			n, raddr, err := conn.ReadFromUDP(buf)
 			if err != nil {
-				panic(err)
+				//TODO:
+				break
 			}
 
 			if n < 1 {
@@ -64,8 +65,7 @@ func punchServer(ctx context.Context, peers *lru.Cache, addr *net.UDPAddr) (net.
 			}
 		}
 	}()
-
-	return conn.LocalAddr(), nil
+	return nil
 }
 
 func main() {
@@ -101,7 +101,7 @@ func main() {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	sAddr, err := punchServer(ctx, peers, addr)
+	err = punchServer(ctx, peers, addr)
 	if err != nil {
 		l.Fatal(err)
 	}
@@ -110,7 +110,7 @@ func main() {
 	if err != nil {
 		l.Fatalf("error starting punch server err=%s", err)
 	}
-	l.Printf("starting udppunch server at: %s", sAddr.String())
+	l.Printf("starting udppunch server at: %s", addr)
 	// wait forever
 	select {}
 }

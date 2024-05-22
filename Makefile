@@ -44,11 +44,11 @@ vuln/verbose:
 	govulncheck -show verbose ./...
 
 test:
-	go test -v ./...
+	go test -race -v ./...
 
 test/watch:
 	@ls *.go server/*.go client/netx/*.go client/wg/*.go | \
-		entr -c -s 'go test -failfast -v ./... && notify "💚" || notify "🛑"'
+		entr -c -s 'go test -race -failfast -v ./... && echo "💚" || echo "🛑"'
 
 coverage/html:
 	go test -v -cover -coverprofile=c.out
