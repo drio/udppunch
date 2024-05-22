@@ -7,7 +7,7 @@ ARCHITECTURES=amd64 arm64
 LDFLAGS=-ldflags '-s -w -extldflags "-static"' 
 
 .PHONY: all build build_all clean vuln vuln/verbose test test/watch \
-	coverage/html lint list rsync rsync/watch
+	coverage/html lint list rsync rsync/watch coverage
 
 all: clean build_all list
 
@@ -51,8 +51,11 @@ test/watch:
 		entr -c -s 'go test -race -failfast -v ./... && echo "💚" || echo "🛑"'
 
 coverage/html:
-	go test -v -cover -coverprofile=c.out
-	go tool cover -html=c.out
+	go test ./... -v -cover -coverprofile=c.out
+	go tool cover
+
+coverage:
+	go test ./... -cover
 
 lint:
 	golangci-lint run

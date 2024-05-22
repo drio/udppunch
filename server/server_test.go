@@ -32,6 +32,7 @@ func TestServer(t *testing.T) {
 	}
 	defer func() { _ = client.Close() }()
 
+	// send an invalid first byte to the server
 	_, err = client.WriteTo([]byte("foo"), serverAddr)
 	if err != nil {
 		t.Fatalf("error sending data to server err=%s", err)
@@ -45,6 +46,7 @@ func TestServer(t *testing.T) {
 	pubKeyB64 := "szyWfOODAAu6Ma1pufrAng+atPHnSn/dfGm61JcvDQE="
 	pubKey, _ := base64.StdEncoding.DecodeString(pubKeyB64)
 
+	// Store a valid key in the server
 	data := make([]byte, 0, 32+1)
 	data = append(data, udppunch.HandshakeType)
 	data = append(data, pubKey[:]...)
@@ -53,6 +55,7 @@ func TestServer(t *testing.T) {
 		t.Fatalf("error sending data to server err=%s", err)
 	}
 
+	// Perform a resolve action against the server
 	data = make([]byte, 0, 32+1)
 	data = append(data, udppunch.ResolveType)
 	data = append(data, pubKey[:]...)
@@ -61,6 +64,7 @@ func TestServer(t *testing.T) {
 		t.Fatalf("error sending data to server err=%s", err)
 	}
 
+	// Read the response from the server
 	buf := make([]byte, 1024)
 	n, _, err := client.ReadFrom(buf)
 	if err != nil {
@@ -71,6 +75,7 @@ func TestServer(t *testing.T) {
 		t.Fatal("should have been able to read one peer")
 	}
 
+	// Validate that the returned key is the one we requested
 	readKey, _ := readPeers[0].Parse()
 	expectedKey := udppunch.NewKeyFromStr(pubKeyB64)
 	if readKey != expectedKey {
