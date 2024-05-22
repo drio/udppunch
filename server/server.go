@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -19,13 +20,18 @@ var (
 	version = flag.Bool("version", false, "show version")
 )
 
-func punchServer(peers *lru.Cache, addr *net.UDPAddr) (net.Addr, error) {
+func punchServer(ctx context.Context, peers *lru.Cache, addr *net.UDPAddr) (net.Addr, error) {
 	conn, err := net.ListenUDP("udp", addr)
 	if err != nil {
 		return nil, err
 	}
 
 	go func() {
+		go func() {
+			<-ctx.Done()
+			_ = conn.Close()
+		}()
+
 		for {
 			buf := make([]byte, 1024*8)
 			n, raddr, err := conn.ReadFromUDP(buf)
@@ -94,10 +100,12 @@ func main() {
 		l.Fatal(err)
 	}
 
-	sAddr, err := punchServer(peers, addr)
+	ctx, cancel := context.WithCancel(context.Background())
+	sAddr, err := punchServer(ctx, peers, addr)
 	if err != nil {
 		l.Fatal(err)
 	}
+	defer cancel()
 
 	if err != nil {
 		l.Fatalf("error starting punch server err=%s", err)
