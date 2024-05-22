@@ -19,6 +19,49 @@ var (
 	version = flag.Bool("version", false, "show version")
 )
 
+func punchServer(peers *lru.Cache, addr *net.UDPAddr) (net.Addr, error) {
+	conn, err := net.ListenUDP("udp", addr)
+	if err != nil {
+		return nil, err
+	}
+
+	go func() {
+		for {
+			buf := make([]byte, 1024*8)
+			n, raddr, err := conn.ReadFromUDP(buf)
+			if err != nil {
+				panic(err)
+			}
+
+			if n < 1 {
+				continue
+			}
+
+			// l.Printf("\nfrom:%v\n%s", raddr, hex.Dump(buf[:n]))
+
+			switch buf[0] {
+			case udppunch.HandshakeType:
+				var key udppunch.Key
+				copy(key[:], buf[1:])
+				peers.Add(key, udppunch.NewPeerFromAddr(key, raddr))
+			case udppunch.ResolveType:
+				data := make([]byte, 0, (n-1)/32*38)
+				for i := 1; i < n; i += 32 {
+					var key udppunch.Key
+					copy(key[:], buf[i:i+32])
+					if v, ok := peers.Get(key); ok {
+						peer := v.(udppunch.Peer)
+						data = append(data, peer[:]...)
+					}
+				}
+				conn.WriteToUDP(data, raddr)
+			}
+		}
+	}()
+
+	return conn.LocalAddr(), nil
+}
+
 func main() {
 	if flag.Parse(); !flag.Parsed() {
 		flag.Usage()
@@ -46,47 +89,20 @@ func main() {
 			}
 		}
 	}()
-
 	addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("0.0.0.0:%d", *port))
 	if err != nil {
 		l.Fatal(err)
 	}
 
-	conn, err := net.ListenUDP("udp", addr)
-
+	sAddr, err := punchServer(peers, addr)
 	if err != nil {
 		l.Fatal(err)
 	}
 
-	for {
-		buf := make([]byte, 1024*8)
-		n, raddr, err := conn.ReadFromUDP(buf)
-		if err != nil {
-			panic(err)
-		}
-
-		if n < 1 {
-			continue
-		}
-
-		// l.Printf("\nfrom:%v\n%s", raddr, hex.Dump(buf[:n]))
-
-		switch buf[0] {
-		case udppunch.HandshakeType:
-			var key udppunch.Key
-			copy(key[:], buf[1:])
-			peers.Add(key, udppunch.NewPeerFromAddr(key, raddr))
-		case udppunch.ResolveType:
-			data := make([]byte, 0, (n-1)/32*38)
-			for i := 1; i < n; i += 32 {
-				var key udppunch.Key
-				copy(key[:], buf[i:i+32])
-				if v, ok := peers.Get(key); ok {
-					peer := v.(udppunch.Peer)
-					data = append(data, peer[:]...)
-				}
-			}
-			conn.WriteToUDP(data, raddr)
-		}
+	if err != nil {
+		l.Fatalf("error starting punch server err=%s", err)
 	}
+	l.Printf("starting udppunch server at: %s", sAddr.String())
+	// wait forever
+	select {}
 }
