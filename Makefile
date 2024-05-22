@@ -7,11 +7,15 @@ ARCHITECTURES=amd64 arm64
 LDFLAGS=-ldflags '-s -w -extldflags "-static"' 
 
 .PHONY: all build build_all clean vuln vuln/verbose test test/watch \
-	coverage/html lint list copy
+	coverage/html lint list rsync rsync/watch
 
 all: clean build_all list
 
-copy: build_all
+.PHONY: 
+rsync/watch:
+	@ls * client/* server/* client/wg/* client/netx/* | entr -c -s "make -j3 rsync && notify '🚀' '$(PRJ) rsync done'"
+
+rsync: build_all
 	rsync -avz -e ssh dist/punch-server-linux-amd64 atom:
 	rsync -avz -e ssh dist/punch-client-linux-amd64 hs1:
 	rsync -avz -e ssh dist/punch-client-linux-amd64 labs:
@@ -52,3 +56,5 @@ coverage/html:
 
 lint:
 	golangci-lint run
+
+
