@@ -1,6 +1,6 @@
 # udppunch
 
-udp punch for wireguard, inspired by [natpunch-go](https://github.com/malcolmseyd/natpunch-go)
+Fork from [natpunch-go](https://github.com/malcolmseyd/natpunch-go).
 
 ## usage
 
