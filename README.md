@@ -1,6 +1,6 @@
 <h2 align="center">udp punch</h2> 
 <p align="center">
-  <img align="center" src="wg-tmux.png" width="600px" alt="udp punch"/>
+  <img align="center" src="wg-tmux.png" width="800px" alt="udp punch"/>
 </p>
 
 Fork from [natpunch-go](https://github.com/malcolmseyd/natpunch-go). 
