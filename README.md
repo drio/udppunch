@@ -26,6 +26,12 @@ Fantastic.
 
 ![](wg-tmux.png)
 
+What you are seeing here are six ssh sessions against three machines. The first 
+row are for the server and the two next ones are for the two clients. On the left
+terminals you can see, in this order: the server and the two clients. In the client
+panes you can see the commands to setup the wg interface and then how the client runs
+and configures the endpoints.
+
 ## usage
 
 server side
